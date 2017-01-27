@@ -11,7 +11,14 @@ while session = server.accept
 	http_method, full_path = request.split(' ')
 	path, params = full_path.split('?')
 	
-	input = StringIO.new
+	headers = {}
+	while (line = session.gets) != "\r\n"
+		key,value = line.split(':',2)
+		headers[key] = value.strip
+	end
+	body = session.read(headers["Content-Length"].to_i)
+		
+	input = StringIO.new(body)
         input.set_encoding 'ASCII-8BIT'
 	puts path,params
 	status, headers, body = app.call({
@@ -22,6 +29,7 @@ while session = server.accept
 	        'SERVER_PORT' => '5678',
 		'REMOTE_ADDR' => '127.0.0.1',
 	        'rack.version' => [1,3],
+		'HTTP_COOKIE' => headers['Cookie'],
 	        'rack.input' => input,
        	        'rack.errors' => $stderr,
 	        'rack.multithread' => false,
